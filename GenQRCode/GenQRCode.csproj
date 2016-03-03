@@ -51,6 +51,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cFileNameStatus.cs" />
     <Compile Include="GenQRCode.cs" />
     <Compile Include="InfoLineText.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
