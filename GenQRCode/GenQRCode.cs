@@ -40,11 +40,19 @@ namespace GenQRCode
         private Size _imgSize;
         private float _dpiResolution = 300;
         private bool _resizeFonts = true;
+        private string _fileName;
 
         private const int _cstDpiResolution = 300;
         private const int _qrcSquareSize = 600;
         public int imgStep = 5;
 
+
+
+        public string fileName
+        {
+            get { return _fileName; }
+            set { _fileName = value; }
+        }
 
         public string qrData
         {
@@ -109,7 +117,7 @@ namespace GenQRCode
         /// </summary>
         /// <param name="qrdata">Data string in qr code</param>
         /// <param name="outpath">Path string where the image will be saved</param>
-        public GenQRCode(string qrdata, string outpath) : this(qrdata, outpath, _qrcSquareSize)
+        public GenQRCode(string qrdata, string outpath, string fName) : this(qrdata, outpath, fName, _qrcSquareSize)
         {
         }
 
@@ -119,7 +127,7 @@ namespace GenQRCode
         /// <param name="qrdata">Data string in qr code</param>
         /// <param name="outpath">Path string where the image will be saved</param>
         /// <param name="qrcSize">QR code size in pixels, given as a point struct</param>
-        public GenQRCode(string qrdata, string outpath, int qrcSize) : this(qrdata, outpath, qrcSize, _cstDpiResolution)
+        public GenQRCode(string qrdata, string outpath, string fName, int qrcSize) : this(qrdata, outpath, fName, qrcSize, _cstDpiResolution)
         {
         }
 
@@ -130,7 +138,7 @@ namespace GenQRCode
         /// <param name="outpath">Path string where the image will be saved</param>
         /// <param name="qrcSize">QR code size in pixels, given as a point struct</param>
         /// <param name="imgResolution">Image resolution in dpi</param>
-        public GenQRCode(string qrdata, string outpath, int qrcSize, int imgResolution) : this (qrdata,outpath,qrcSize,imgResolution, false)
+        public GenQRCode(string qrdata, string outpath, string fName, int qrcSize, int imgResolution) : this (qrdata,outpath, fName, qrcSize,imgResolution, false)
         {
         }
 
@@ -142,8 +150,8 @@ namespace GenQRCode
         /// <param name="qrcSize">QR code size in pixels, given as a point struct</param>
         /// <param name="imgResolution">Image resolution in dpi</param>
         /// <param name="lineList">List of additional text to write on image</param>
-        public GenQRCode(string qrdata, string outpath, int qrcSize, int imgResolution, bool fontResize) 
-            : this(qrdata, outpath, qrcSize, imgResolution, fontResize, null)
+        public GenQRCode(string qrdata, string outpath, string fName, int qrcSize, int imgResolution, bool fontResize) 
+            : this(qrdata, outpath, fName, qrcSize, imgResolution, fontResize, null)
         {
         }
         /// <summary>
@@ -155,8 +163,8 @@ namespace GenQRCode
         /// <param name="imgResolution">Image resolution in dpi</param>
         /// <param name="lineList">List of additional text to write on image</param>
         /// <param name="qrPos">Location of the qrcode square on the image, enum for each location</param>
-        public GenQRCode(string qrdata, string outpath, int qrcSize, int imgResolution, bool fontResize, List<InfoLineText> lineList) : 
-            this(qrdata, outpath, qrcSize, imgResolution, fontResize, lineList, qrPosition.none)
+        public GenQRCode(string qrdata, string outpath, string fName, int qrcSize, int imgResolution, bool fontResize, List<InfoLineText> lineList) : 
+            this(qrdata, outpath, fName, qrcSize, imgResolution, fontResize, lineList, qrPosition.none)
         {
             //qrData = qrdata;
             //outPath = outpath;
@@ -175,10 +183,11 @@ namespace GenQRCode
 
         }
 
-        public GenQRCode(string qrdata, string outpath, int qrcSize, int imgResolution, bool fontResize, List<InfoLineText> lineList, qrPosition qrPos)
+        public GenQRCode(string qrdata, string outpath, string fName, int qrcSize, int imgResolution, bool fontResize, List<InfoLineText> lineList, qrPosition qrPos)
         {
             qrData = qrdata;
             outPath = outpath;
+            fileName = fName;
             qrSize = new Size(qrcSize, qrcSize);
             dpiResolution = imgResolution;
             resizeFont = fontResize;
@@ -201,10 +210,10 @@ namespace GenQRCode
         /// </summary>
         /// <param name="fileName">string to check and strip of invalid characters</param>
         /// <returns>string</returns>
-        private static string GetValidFileName(string fileName)
+        private static string GetValidFileName(string fName)
         {
             // remove any invalid character from the filename.
-            return Regex.Replace(fileName.Trim(), "[^A-Za-z0-9-_.]+", "_");
+            return Regex.Replace(fName.Trim(), "[^A-Za-z0-9-_.]+", "_");
         }
 
         /// <summary>
@@ -256,16 +265,22 @@ namespace GenQRCode
 
         }
 
+        public string GetFileName(string filename)
+        {
+            string fileName = GetValidFileName(filename + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + dpiResolution.ToString() +"_"+ _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+            return fileName;
+        }
         public void WriteImage()
         {
             switch (qrLocation)
             {
                 case qrPosition.none:
                     {
-                        //outfile.SetResolution((float)300, (float)300);
+                        
                         outfile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        outfile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        outfile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 case qrPosition.right:
@@ -290,8 +305,9 @@ namespace GenQRCode
                             yOffset += (int)(Math.Round(textItem.pxDimensions.Height,MidpointRounding.AwayFromZero));
                         }
                         imageFile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        imageFile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        imageFile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 case qrPosition.top:
@@ -318,8 +334,9 @@ namespace GenQRCode
 
                         }
                         imageFile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        imageFile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        imageFile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 case qrPosition.left:
@@ -351,8 +368,9 @@ namespace GenQRCode
                             yOffset += (int)(Math.Round(textItem.pxDimensions.Height,MidpointRounding.AwayFromZero));
                         }
                         imageFile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        imageFile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        imageFile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 case qrPosition.bottom:
@@ -378,8 +396,9 @@ namespace GenQRCode
                             yOffset = (int)(Math.Round(yOffsetF,MidpointRounding.AwayFromZero));
                         }
                         imageFile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        imageFile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        imageFile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 case qrPosition.center:
@@ -417,8 +436,9 @@ namespace GenQRCode
                             grImg.DrawString(textLines[i].textData, textLines[i].fontStyle, brush, imageFile.Width / 2, yOffset, format);
                         }
                         imageFile.SetResolution(dpiResolution, dpiResolution);
-                        string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
-                        imageFile.Save(System.IO.Path.Combine(outPath, fileName), System.Drawing.Imaging.ImageFormat.Png);
+                        string imgFileName = GetFileName(fileName);
+                        //string fileName = GetValidFileName(qrData + "_" + qrSize.Width.ToString() + "x" + qrSize.Height.ToString() + "_" + _encodeopt.Hints[EncodeHintType.ERROR_CORRECTION] + ".png");
+                        imageFile.Save(System.IO.Path.Combine(outPath, imgFileName), System.Drawing.Imaging.ImageFormat.Png);
                         break;
                     }
                 default:
